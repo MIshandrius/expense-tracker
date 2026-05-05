@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ── Summary Cards ── -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:1rem; margin-bottom:2rem;">
+    <div class="card" style="border-color: var(--accent); background: rgba(200,240,74,0.06);">
+        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:0.4rem;">Total Spent</div>
+        <div style="font-size:2rem; font-weight:800; color:var(--accent); font-family:var(--mono);">
+            {{ "%.2f"|format(total) }}
+        </div>
+    </div>
+    <div class="card">
+        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:0.4rem;">Transactions</div>
+        <div style="font-size:2rem; font-weight:800; font-family:var(--mono);">{{ expenses|length }}</div>
+    </div>
+</div>
+
+<!-- ── Header row ── -->
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+    <h1 class="page-title" style="margin:0;">My <span>Expenses</span></h1>
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <!-- Category filter -->
+        <form method="GET" action="/" style="display:flex; gap:0.5rem;">
+            <select name="category" onchange="this.form.submit()"
+                style="width:auto; padding:0.5rem 0.75rem; font-size:0.875rem;">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat['category'] }}"
+                        {% if selected_category == cat['category'] %}selected{% endif %}>
+                        {{ cat['category'] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="/add" class="btn btn-primary">+ Add Expense</a>
+    </div>
+</div>
+
+<!-- ── Expense Table ── -->
+{% if expenses %}
+<div class="card" style="padding:0; overflow:hidden;">
+    <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+                <th style="padding:1rem 1.25rem; text-align:left; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600;">Title</th>
+                <th style="padding:1rem 1.25rem; text-align:left; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600;">Category</th>
+                <th style="padding:1rem 1.25rem; text-align:left; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600;">Date</th>
+                <th style="padding:1rem 1.25rem; text-align:right; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600;">Amount</th>
+                <th style="padding:1rem 1.25rem; text-align:center; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for expense in expenses %}
+            <tr style="border-bottom:1px solid var(--border); transition: background 0.15s;"
+                onmouseover="this.style.background='rgba(255,255,255,0.03)'"
+                onmouseout="this.style.background='transparent'">
+                <td style="padding:1rem 1.25rem;">
+                    <div style="font-weight:600;">{{ expense['title'] }}</div>
+                    {% if expense['note'] %}
+                    <div style="font-size:0.8rem; color:var(--muted); margin-top:0.2rem;">{{ expense['note'] }}</div>
+                    {% endif %}
+                </td>
+                <td style="padding:1rem 1.25rem;">
+                    <span style="background:rgba(124,106,247,0.15); color:#a89ef5; padding:0.25rem 0.65rem; border-radius:20px; font-size:0.8rem; font-weight:600;">
+                        {{ expense['category'] }}
+                    </span>
+                </td>
+                <td style="padding:1rem 1.25rem; color:var(--muted); font-family:var(--mono); font-size:0.875rem;">
+                    {{ expense['date'] }}
+                </td>
+                <td style="padding:1rem 1.25rem; text-align:right; font-family:var(--mono); font-weight:600; color:var(--accent);">
+                    {{ "%.2f"|format(expense['amount']) }}
+                </td>
+                <td style="padding:1rem 1.25rem; text-align:center;">
+                    <div style="display:flex; gap:0.5rem; justify-content:center;">
+                        <a href="/edit/{{ expense['id'] }}" class="btn btn-ghost" style="padding:0.35rem 0.75rem; font-size:0.8rem;">Edit</a>
+                        <form method="POST" action="/delete/{{ expense['id'] }}"
+                              onsubmit="return confirm('Delete this expense?')">
+                            <button type="submit" class="btn btn-danger" style="padding:0.35rem 0.75rem; font-size:0.8rem;">Delete</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<!-- Empty state -->
+<div class="card" style="text-align:center; padding:4rem 2rem;">
+    <div style="font-size:3rem; margin-bottom:1rem;">📭</div>
+    <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.5rem;">No expenses yet</div>
+    <div style="color:var(--muted); margin-bottom:1.5rem;">Start tracking your spending by adding your first expense.</div>
+    <a href="/add" class="btn btn-primary">+ Add First Expense</a>
+</div>
+{% endif %}
+
+{% endblock %}

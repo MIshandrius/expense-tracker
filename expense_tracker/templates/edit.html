@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div style="max-width:520px;">
+    <a href="/" class="btn btn-ghost" style="margin-bottom:1.5rem; display:inline-flex;">← Back</a>
+    <h1 class="page-title">Edit <span>Expense</span></h1>
+
+    <div class="card">
+        <form method="POST" action="/edit/{{ expense['id'] }}">
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" name="title" value="{{ expense['title'] }}" required>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div class="form-group">
+                    <label for="amount">Amount ($) *</label>
+                    <input type="number" id="amount" name="amount" step="0.01" min="0.01"
+                           value="{{ expense['amount'] }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="date">Date *</label>
+                    <input type="date" id="date" name="date" value="{{ expense['date'] }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category *</label>
+                <select id="category" name="category" required>
+                    {% for cat in ["Food","Transport","Entertainment","Health","Shopping","Bills","Education","Other"] %}
+                    <option {% if expense['category'] == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="note">Note (optional)</label>
+                <textarea id="note" name="note">{{ expense['note'] or '' }}</textarea>
+            </div>
+
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:0.5rem;">
+                <a href="/" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">Update Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
