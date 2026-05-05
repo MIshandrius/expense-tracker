@@ -1,18 +1,22 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 
+# Create the Flask app
 app = Flask(__name__)
 
+# Database file name
 DATABASE = "expenses.db"
 
-## Database connection function to get a connection to the SQLite database
+# Helper functions to manage the database connection and initialization
 def get_db():
+    """Connect to the SQLite database and return the connection."""
     conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
+    conn.row_factory = sqlite3.Row  # Makes rows behave like dictionaries
     return conn
 
-## Database initialization function to create the expenses table if it doesn't exist
+# Initialize the database and create the expenses table if it doesn't exist
 def init_db():
+    """Create the expenses table if it doesn't already exist."""
     conn = get_db()
     conn.execute("""
         CREATE TABLE IF NOT EXISTS expenses (
@@ -27,14 +31,15 @@ def init_db():
     conn.commit()
     conn.close()
 
-## Route for the home page that displays the list of expenses, total amount, and category filter
+
+# READ - show all expenses
 @app.route("/")
 def index():
+    """Home page: display all expenses and total spending."""
     conn = get_db()
 
     category_filter = request.args.get("category", "")
-
-    ## Fetch expenses from the database, applying category filter if provided, and calculate the total amount
+# If a category filter is applied, fetch only expenses from that category; otherwise, fetch all expenses. Then calculate the total amount and get the list of unique categories for the filter dropdown. Finally, render the index.html template with the expenses, total, categories, and selected category.
     if category_filter:
         expenses = conn.execute(
             "SELECT * FROM expenses WHERE category = ? ORDER BY date DESC",
@@ -51,7 +56,6 @@ def index():
         "SELECT DISTINCT category FROM expenses ORDER BY category"
     ).fetchall()
 
-    ## Close the database connection and render the index template with the fetched data
     conn.close()
     return render_template(
         "index.html",
@@ -61,23 +65,22 @@ def index():
         selected_category=category_filter
     )
 
-## Route for adding a new expense, handling both GET and POST requests
+
+# CREATE - show form + handle submission
 @app.route("/add", methods=["GET", "POST"])
 def add_expense():
-    ## If the request method is POST, insert the new expense into the database
+    """Show the add-expense form (GET) and save a new expense (POST)."""
     if request.method == "POST":
         title    = request.form["title"].strip()
         amount   = request.form["amount"]
         category = request.form["category"].strip()
         date     = request.form["date"]
         note     = request.form.get("note", "").strip()
-        
-        ## Validate the input data and return an error message if any required field is missing
+# Validate that all required fields are filled in; if not, show an error message. If validation passes, insert the new expense into the database and redirect to the home page.
         if not title or not amount or not category or not date:
             error = "Please fill in all required fields."
             return render_template("add.html", error=error)
 
-        ## Insert the new expense into the database and redirect to the home page
         conn = get_db()
         conn.execute(
             "INSERT INTO expenses (title, amount, category, date, note) VALUES (?, ?, ?, ?, ?)",
@@ -89,22 +92,20 @@ def add_expense():
 
     return render_template("add.html")
 
-## Route for editing an existing expense, handling both GET and POST requests
+
+# UPDATE - show pre-filled form + handle changes
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
 def edit_expense(expense_id):
-
-    ## Fetch the expense with the given ID from the database
+    """Show the edit form for an existing expense and save changes."""
     conn = get_db()
     expense = conn.execute(
         "SELECT * FROM expenses WHERE id = ?", (expense_id,)
     ).fetchone()
-
-    ## If the expense with the given ID is not found, return a 404 error
+# If the expense with the given ID does not exist, return a 404 error. If the form is submitted (POST), update the expense in the database with the new values and redirect to the home page. If it's a GET request, render the edit.html template with the existing expense data pre-filled in the form.
     if expense is None:
         conn.close()
         return "Expense not found", 404
-    
-    ## If the request method is POST, update the expense with the new data from the form
+# If the form is submitted (POST), update the expense in the database with the new values and redirect to the home page. If it's a GET request, render the edit.html template with the existing expense data pre-filled in the form.
     if request.method == "POST":
         title    = request.form["title"].strip()
         amount   = request.form["amount"]
@@ -125,16 +126,20 @@ def edit_expense(expense_id):
     conn.close()
     return render_template("edit.html", expense=expense)
 
-## Route for deleting an expense, handling POST requests
+
+# DELETE - remove an expense
 @app.route("/delete/<int:expense_id>", methods=["POST"])
 def delete_expense(expense_id):
+    """Delete an expense by its ID."""
     conn = get_db()
     conn.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
 
-## Main block to initialize the database and run the Flask application
+# Run the app
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5000))  # Railway sets PORT automatically
+    app.run(host="0.0.0.0", port=port, debug=False)
